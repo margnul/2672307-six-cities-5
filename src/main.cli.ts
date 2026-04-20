@@ -6,7 +6,7 @@ import { GenerateCommand } from './cli/generate.command.js';
 
 // Импортируем зависимости для работы с БД
 import { DefaultUserService } from './shared/modules/user/default-user.service.js';
-import { DefaultOfferService } from './shared/modules/offer/default-offer.service.js';
+import DefaultOfferService from './shared/modules/offer/default-offer.service.js';
 import { UserModel } from './shared/modules/user/user.entity.js';
 import { OfferModel } from './shared/modules/offer/offer.entity.js';
 
@@ -25,7 +25,7 @@ class CLIApplication {
     const logger = new PinoLogger();
 
     const userService = new DefaultUserService(logger, UserModel);
-    const offerService = new DefaultOfferService(logger, OfferModel);
+    const offerService = new DefaultOfferService(OfferModel);
 
     const salt = 'cli-secret-salt';
 
