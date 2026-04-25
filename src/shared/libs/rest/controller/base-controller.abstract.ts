@@ -21,9 +21,13 @@ export abstract class BaseController implements Controller {
   }
 
   public addRoute(route: Route) {
-    // Используем express-async-handler для автоматического перехвата ошибок в асинхронных методах (требование ТЗ)
     const wrapperAsyncHandler = asyncHandler(route.handler.bind(this));
-    this._router[route.method](route.path, wrapperAsyncHandler);
+
+    const middlewareHandlers = route.middlewares?.map(
+      (item) => asyncHandler(item.execute.bind(item))
+    ) || [];
+
+    this._router[route.method](route.path, [...middlewareHandlers, wrapperAsyncHandler]);
     this.logger.info(`Route registered: ${route.method.toUpperCase()} ${route.path}`);
   }
 
