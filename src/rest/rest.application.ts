@@ -51,6 +51,12 @@ export class RestApplication {
   private async _initMiddleware() {
     this.logger.info('Initializing middleware...');
     this.server.use(express.json());
+    const uploadDir = String(this.config.get('UPLOAD_DIRECTORY')); // Приводим к строке
+
+    this.server.use(
+      uploadDir,
+      express.static(uploadDir)
+    );
   }
 
   // 4. Регистрация маршрутов

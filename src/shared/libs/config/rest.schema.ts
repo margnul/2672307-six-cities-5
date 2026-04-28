@@ -10,6 +10,7 @@ export type RestSchema = {
   DB_NAME: string;
   MONGO_INITDB_ROOT_USERNAME: string;
   MONGO_INITDB_ROOT_PASSWORD: string;
+  UPLOAD_DIRECTORY: string;
 }
 
 export const configRestSchema = convict<RestSchema>({
@@ -48,5 +49,11 @@ export const configRestSchema = convict<RestSchema>({
     format: String,
     default: 'test',
     env: 'MONGO_INITDB_ROOT_PASSWORD',
+  },
+  UPLOAD_DIRECTORY: {
+    doc: 'Directory for uploaded files',
+    format: String,
+    default: '/upload',
+    env: 'UPLOAD_DIRECTORY',
   },
 });
