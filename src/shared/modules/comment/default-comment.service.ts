@@ -35,4 +35,8 @@ export default class DefaultCommentService implements CommentService {
 
     return result.deletedCount ?? 0;
   }
+
+  public async exists(documentId: string): Promise<boolean> {
+    return (await this.commentModel.exists({ _id: documentId })) !== null;
+  }
 }

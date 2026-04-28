@@ -10,12 +10,16 @@ import { fillDTO } from '../../helpers/common.js';
 import { UserRdo } from './rdo/user.rdo.js';
 import { LoginUserDto } from './dto/login-user.dto.js';
 import { ValidateDtoMiddleware } from '../../libs/rest/middleware/validate-dto.middleware.js';
+import { UploadFileMiddleware } from '../../libs/rest/middleware/upload-file.middleware.js';
+import { Config } from '../../libs/config/config.interface.js';
+import { RestSchema } from '../../libs/config/rest.schema.js';
 
 @injectable()
 export default class UserController extends BaseController {
   constructor(
     @inject(Component.Logger) protected readonly logger: Logger,
     @inject(Component.UserService) private readonly userService: UserService,
+    @inject(Component.Config) private readonly config: Config<RestSchema>,
   ) {
     super(logger);
 
@@ -36,6 +40,15 @@ export default class UserController extends BaseController {
       handler: this.login,
       middlewares: [new ValidateDtoMiddleware(LoginUserDto)] // <-- Подключили валидацию
     });
+    this.addRoute({
+      path: '/avatar', // Будет доступно по POST /users/avatar
+      method: HttpMethod.Post,
+      handler: this.uploadAvatar,
+      middlewares: [
+        // Указываем путь из конфига и имя поля 'avatar'
+        new UploadFileMiddleware(this.config.get('UPLOAD_DIRECTORY'), 'avatar'),
+      ]
+    });
   }
 
   public async create(
@@ -53,5 +66,11 @@ export default class UserController extends BaseController {
     // Логика проверки будет в 7 разделе, пока просто логируем
     this.logger.info(`User try login: ${body.email}`);
     throw new Error('Not implemented');
+  }
+
+  public async uploadAvatar(req: Request, res: Response): Promise<void> {
+    this.created(res, {
+      filepath: req.file?.filename
+    });
   }
 }

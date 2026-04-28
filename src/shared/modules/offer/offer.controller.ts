@@ -12,6 +12,7 @@ import { ValidateDtoMiddleware } from '../../libs/rest/middleware/validate-dto.m
 import { ValidateObjectIdMiddleware } from '../../libs/rest/middleware/validate-objectid.middleware.js';
 import { HttpError } from '../../libs/rest/errors/http-error.js';
 import { StatusCodes } from 'http-status-codes';
+import { DocumentExistsMiddleware } from '../../libs/rest/middleware/document-exists.middleware.js';
 
 @injectable()
 export default class OfferController extends BaseController {
@@ -34,14 +35,10 @@ export default class OfferController extends BaseController {
       path: '/:offerId',
       method: HttpMethod.Get,
       handler: this.show,
-      middlewares: [new ValidateObjectIdMiddleware('offerId')]
-    });
-    this.addRoute({ path: '/premium', method: HttpMethod.Get, handler: this.getPremium });
-    this.addRoute({
-      path: '/:offerId',
-      method: HttpMethod.Delete,
-      handler: this.delete,
-      middlewares: [new ValidateObjectIdMiddleware('offerId')]
+      middlewares: [
+        new ValidateObjectIdMiddleware('offerId'),
+        new DocumentExistsMiddleware(this.offerService, 'Offer', 'offerId'),
+      ]
     });
   }
 
@@ -64,17 +61,9 @@ export default class OfferController extends BaseController {
   }
 
   public async show({ params }: Request, res: Response): Promise<void> {
-    const offerId = params.offerId as string;
-    const offer = await this.offerService.findById(offerId);
-
-    if (!offer) {
-      throw new HttpError(
-        404,
-        `Offer with id ${offerId} not found.`,
-        'OfferController'
-      );
-    }
-
+    const { offerId } = params;
+    const offer = await this.offerService.findById(offerId as string);
+    // Нам не нужен if (!offer), так как DocumentExistsMiddleware уже всё проверил
     this.ok(res, fillDTO(OfferListRdo, offer));
   }
 

@@ -14,3 +14,8 @@ coverage
 Thumbs.db
 
 mocks/*.tsv
+
+node_modules
+dist
+.env
+/upload
