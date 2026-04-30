@@ -59,7 +59,7 @@ export class DefaultUserService implements UserService {
   public async updateFavorite(userId: string, offerId: string, isFavorite: boolean): Promise<void> {
     const updateQuery = isFavorite
       ? { $addToSet: { favorites: offerId } } // Добавляем, если еще нет
-      : { $pull: { favorites: offerId } };    // Удаляем
+      : { $pull: { favorites: offerId } }; // Удаляем
 
     await this.userModel.findByIdAndUpdate(userId, updateQuery).exec();
   }
