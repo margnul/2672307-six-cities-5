@@ -11,6 +11,7 @@ export type RestSchema = {
   MONGO_INITDB_ROOT_USERNAME: string;
   MONGO_INITDB_ROOT_PASSWORD: string;
   UPLOAD_DIRECTORY: string;
+  JWT_SECRET: string;
 }
 
 export const configRestSchema = convict<RestSchema>({
@@ -55,5 +56,11 @@ export const configRestSchema = convict<RestSchema>({
     format: String,
     default: '/upload',
     env: 'UPLOAD_DIRECTORY',
+  },
+  JWT_SECRET: {
+    doc: 'Secret for signing JWT',
+    format: String,
+    env: 'JWT_SECRET',
+    default: null
   },
 });

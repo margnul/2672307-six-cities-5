@@ -18,4 +18,7 @@ export class OfferListRdo {
 
   @Expose()
   public rating!: number;
+
+  @Expose()
+  public isFavorite!: boolean;
 }

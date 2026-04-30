@@ -8,6 +8,7 @@ import { DatabaseClient } from '../shared/libs/database-client/database-client.i
 import { getMongoURI } from '../shared/helpers/database.js';
 import { Controller } from '../shared/libs/rest/controller/controller.interface.js';
 import { ExceptionFilter } from '../shared/libs/rest/exception-filter/exception-filter.interface.js';
+import { ParseTokenMiddleware } from '../shared/libs/rest/middleware/parse-token.middleware.js';
 
 @injectable()
 export class RestApplication {
@@ -24,7 +25,6 @@ export class RestApplication {
     this.server = express();
   }
 
-  // 1. Инициализация базы данных
   private async _initDb() {
     this.logger.info('Init database...');
     const mongoUri = getMongoURI(
@@ -39,7 +39,6 @@ export class RestApplication {
     this.logger.info('Init database done');
   }
 
-  // 2. Настройка сервера (порт)
   private async _initServer() {
     this.logger.info('Try to init server...');
     const port = this.config.get('PORT');
@@ -47,40 +46,38 @@ export class RestApplication {
     this.logger.info(`🚀 Server started on http://localhost:${port}`);
   }
 
-  // 3. Регистрация Middleware (express.json — требование ТЗ)
   private async _initMiddleware() {
-    this.logger.info('Initializing middleware...');
+    this.logger.info('Global middleware initialization…');
     this.server.use(express.json());
-    const uploadDir = String(this.config.get('UPLOAD_DIRECTORY')); // Приводим к строке
-
     this.server.use(
-      uploadDir,
-      express.static(uploadDir)
+      '/upload',
+      express.static(this.config.get('UPLOAD_DIRECTORY'))
     );
+
+    const authenticateMiddleware = new ParseTokenMiddleware(this.config.get('JWT_SECRET'));
+    this.server.use(authenticateMiddleware.execute.bind(authenticateMiddleware));
+
+    this.logger.info('Global middleware initialization completed');
   }
 
-  // 4. Регистрация маршрутов
   private async _initRoutes() {
     this.logger.info('Initializing routes...');
     this.server.use('/offers', this.offerController.router);
     this.server.use('/comments', this.commentController.router);
   }
 
-  // 5. Регистрация фильтров исключений (ДОЛЖНЫ БЫТЬ В КОНЦЕ)
   private async _initExceptionFilters() {
     this.logger.info('Initializing exception filters...');
-    // .bind нужен, чтобы не потерять контекст this внутри метода catch
     this.server.use(this.exceptionFilter.catch.bind(this.exceptionFilter));
   }
 
   public async init() {
     this.logger.info('Application initialization...');
 
-    // Выполняем шаги строго по порядку
     await this._initDb();
     await this._initMiddleware();
     await this._initRoutes();
-    await this._initExceptionFilters(); // Ошибки ловим только после роутов
+    await this._initExceptionFilters();
     await this._initServer();
   }
 }

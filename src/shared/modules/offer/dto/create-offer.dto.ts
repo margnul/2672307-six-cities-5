@@ -3,7 +3,7 @@ import {
   Min, MinLength, IsObject, IsUrl, ArrayMinSize, ArrayMaxSize
 } from 'class-validator';
 
-import { City } from '../../../../types/city.enum.js'; // Убедись, что эти енамы созданы
+import { City } from '../../../../types/city.enum.js';
 import { HousingType } from '../../../../types/housing-type.enum.js';
 import { Amenity } from '../../../../types/amenity.enum.js';
 

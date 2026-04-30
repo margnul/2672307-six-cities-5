@@ -13,6 +13,10 @@ import { ValidateDtoMiddleware } from '../../libs/rest/middleware/validate-dto.m
 import { UploadFileMiddleware } from '../../libs/rest/middleware/upload-file.middleware.js';
 import { Config } from '../../libs/config/config.interface.js';
 import { RestSchema } from '../../libs/config/rest.schema.js';
+import { createJWT } from '../../helpers/jwt.js';
+import { StatusCodes } from 'http-status-codes';
+import { HttpError } from '../../libs/rest/errors/http-error.js';
+import { PrivateRouteMiddleware } from '../../libs/rest/middleware/private-route.middleware.js';
 
 @injectable()
 export default class UserController extends BaseController {
@@ -25,29 +29,34 @@ export default class UserController extends BaseController {
 
     this.logger.info('Register routes for UserController…');
 
-    this.addRoute({ path: '/register', method: HttpMethod.Post, handler: this.create });
-    this.addRoute({ path: '/login', method: HttpMethod.Post, handler: this.login });
     this.addRoute({
       path: '/register',
       method: HttpMethod.Post,
       handler: this.create,
-      middlewares: [new ValidateDtoMiddleware(CreateUserDto)] // <-- Подключили валидацию
+      middlewares: [new ValidateDtoMiddleware(CreateUserDto)]
     });
 
     this.addRoute({
       path: '/login',
       method: HttpMethod.Post,
       handler: this.login,
-      middlewares: [new ValidateDtoMiddleware(LoginUserDto)] // <-- Подключили валидацию
+      middlewares: [new ValidateDtoMiddleware(LoginUserDto)]
     });
+
     this.addRoute({
-      path: '/avatar', // Будет доступно по POST /users/avatar
+      path: '/avatar',
       method: HttpMethod.Post,
       handler: this.uploadAvatar,
       middlewares: [
-        // Указываем путь из конфига и имя поля 'avatar'
         new UploadFileMiddleware(this.config.get('UPLOAD_DIRECTORY'), 'avatar'),
       ]
+    });
+
+    this.addRoute({
+      path: '/login',
+      method: HttpMethod.Get,
+      handler: this.checkAuthenticate,
+      middlewares: [new PrivateRouteMiddleware()]
     });
   }
 
@@ -55,22 +64,44 @@ export default class UserController extends BaseController {
     { body }: Request<Record<string, unknown>, Record<string, unknown>, CreateUserDto>,
     res: Response,
   ): Promise<void> {
-    const result = await this.userService.create(body, 'salt_example'); // Соль пока заглушка
+    const result = await this.userService.create(body, 'salt_example');
     this.created(res, fillDTO(UserRdo, result));
   }
 
   public async login(
     { body }: Request<Record<string, unknown>, Record<string, unknown>, LoginUserDto>,
-    _res: Response,
+    res: Response,
   ): Promise<void> {
-    // Логика проверки будет в 7 разделе, пока просто логируем
-    this.logger.info(`User try login: ${body.email}`);
-    throw new Error('Not implemented');
+    const user = await this.userService.verifyUser(body, this.config.get('SALT'));
+
+    if (!user) {
+      throw new HttpError(
+        StatusCodes.UNAUTHORIZED,
+        'Unauthorized',
+        'UserController',
+      );
+    }
+
+    const token = await createJWT(
+      'HS256',
+      this.config.get('JWT_SECRET'),
+      {
+        email: user.email,
+        id: user.id
+      }
+    );
+
+    this.ok(res, { token });
   }
 
   public async uploadAvatar(req: Request, res: Response): Promise<void> {
     this.created(res, {
       filepath: req.file?.filename
     });
+  }
+
+  public async checkAuthenticate({ tokenPayload }: Request, res: Response): Promise<void> {
+    const user = await this.userService.findByEmail(tokenPayload!.email);
+    this.ok(res, fillDTO(UserRdo, user));
   }
 }

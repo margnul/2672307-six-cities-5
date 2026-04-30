@@ -29,7 +29,6 @@ export class GenerateCommand implements Command {
 
       for (let i = 0; i < offerCount; i++) {
         const tsvRow = tsvOfferGenerator.generate(mockData);
-        // Записываем строку. Если буфер переполнен, ждем события 'drain'
         if (!writeStream.write(`${tsvRow}\n`)) {
           await new Promise((resolve) => writeStream.once('drain', resolve));
         }

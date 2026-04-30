@@ -3,7 +3,7 @@ import { createReadStream } from 'node:fs';
 import { createInterface, Interface } from 'node:readline';
 
 export class TSVFileReader extends EventEmitter {
-  private lineReader: Interface | null = null; // Храним ссылку на интерфейс чтения
+  private lineReader: Interface | null = null;
 
   constructor(public filename: string) {
     super();
@@ -15,7 +15,6 @@ export class TSVFileReader extends EventEmitter {
       encoding: 'utf-8',
     });
 
-    // Создаем интерфейс для построчного чтения
     this.lineReader = createInterface({
       input: readStream,
       terminal: false,
@@ -23,7 +22,6 @@ export class TSVFileReader extends EventEmitter {
 
     let importedRowCount = 0;
 
-    // Подписываемся на событие каждой строки
     this.lineReader.on('line', (line) => {
       if (line.trim().length > 0) {
         importedRowCount++;
@@ -31,23 +29,19 @@ export class TSVFileReader extends EventEmitter {
       }
     });
 
-    // Подписываемся на завершение файла
     this.lineReader.on('close', () => {
       this.emit('end', importedRowCount);
     });
 
-    // Ждем завершения стрима (через промис, чтобы await в execute работал корректно)
     await new Promise((resolve) => {
       this.lineReader?.on('close', resolve);
     });
   }
 
-  // Метод для остановки чтения (вызывается из ImportCommand)
   public pause() {
     this.lineReader?.pause();
   }
 
-  // Метод для возобновления чтения (вызывается из ImportCommand)
   public resume() {
     this.lineReader?.resume();
   }

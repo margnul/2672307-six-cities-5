@@ -11,7 +11,6 @@ import { createCommentContainer } from './shared/modules/comment/comment.contain
 async function bootstrap() {
   const mainContainer = new Container();
 
-  // Просто передаем наш главный контейнер в каждую функцию
   createRestApplicationContainer(mainContainer);
   createUserContainer(mainContainer);
   createOfferContainer(mainContainer);

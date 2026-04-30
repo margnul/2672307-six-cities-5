@@ -14,7 +14,6 @@ export class AppExceptionFilter implements ExceptionFilter {
     this.logger.info('Register AppExceptionFilter');
   }
 
-  // Обработка HTTP-ошибок (ошибки валидации, не найдено и т.д.)
   private handleHttpError(error: HttpError, _req: Request, res: Response, _next: NextFunction) {
     this.logger.error(`[${error.detail}]: ${error.httpStatusCode} — ${error.message}`, error);
     res
@@ -22,7 +21,6 @@ export class AppExceptionFilter implements ExceptionFilter {
       .json({ error: error.message });
   }
 
-  // Обработка любых других (непредвиденных) ошибок сервера
   private handleOtherError(error: Error, _req: Request, res: Response, _next: NextFunction) {
     this.logger.error(error.message, error);
     res

@@ -2,7 +2,7 @@ import { defaultClasses, getModelForClass, prop, modelOptions } from '@typegoose
 import { User, UserType } from '../../../types/user.type.js';
 import { createSHA256 } from '../../helpers/common.js';
 
-export interface UrerEntity extends defaultClasses.Base {}
+export interface UrerEntity extends defaultClasses.Base { }
 
 @modelOptions({
   schemaOptions: {
@@ -10,7 +10,7 @@ export interface UrerEntity extends defaultClasses.Base {}
     timestamps: true,
   }
 })
-export class UserEntity extends defaultClasses.TimeStamps implements User{
+export class UserEntity extends defaultClasses.TimeStamps implements User {
   @prop({ required: true })
   public name!: string;
 
@@ -26,8 +26,16 @@ export class UserEntity extends defaultClasses.TimeStamps implements User{
   @prop({ required: true, default: '' })
   public password?: string;
 
+  @prop({ type: () => [String], default: [] })
+  public favorites!: string[];
+
   public setPassword(password: string, salt: string) {
     this.password = createSHA256(password, salt);
+  }
+
+  public verifyPassword(password: string, salt: string): boolean {
+    const hashPassword = createSHA256(password, salt);
+    return hashPassword === this.password;
   }
 
   public getPassword() {

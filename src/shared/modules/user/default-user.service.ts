@@ -6,6 +6,7 @@ import { inject, injectable } from 'inversify';
 import { Component } from '../../types/component.enum.js';
 import { Logger } from '../../libs/logger/logger.interface.js';
 import { createSHA256 } from '../../helpers/common.js';
+import { LoginUserDto } from './dto/login-user.dto.js';
 
 @injectable()
 export class DefaultUserService implements UserService {
@@ -39,5 +40,32 @@ export class DefaultUserService implements UserService {
 
   public async exists(documentId: string): Promise<boolean> {
     return (await this.userModel.exists({ _id: documentId })) !== null;
+  }
+
+  public async verifyUser(dto: LoginUserDto, salt: string): Promise<DocumentType<UserEntity> | null> {
+    const user = await this.findByEmail(dto.email);
+
+    if (!user) {
+      return null;
+    }
+
+    if (user.verifyPassword(dto.password, salt)) {
+      return user;
+    }
+
+    return null;
+  }
+
+  public async updateFavorite(userId: string, offerId: string, isFavorite: boolean): Promise<void> {
+    const updateQuery = isFavorite
+      ? { $addToSet: { favorites: offerId } } // Добавляем, если еще нет
+      : { $pull: { favorites: offerId } };    // Удаляем
+
+    await this.userModel.findByIdAndUpdate(userId, updateQuery).exec();
+  }
+
+  public async getFavorites(userId: string): Promise<string[]> {
+    const user = await this.userModel.findById(userId).exec();
+    return user?.favorites || [];
   }
 }

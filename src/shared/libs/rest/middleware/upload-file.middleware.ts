@@ -7,15 +7,15 @@ import { Middleware } from './middleware.interface.js';
 export class UploadFileMiddleware implements Middleware {
   constructor(
     private uploadDirectory: string,
-    private fieldName: string, // Название поля из запроса (например, 'avatar')
+    private fieldName: string,
   ) { }
 
   public async execute(req: Request, res: Response, next: NextFunction): Promise<void> {
     const storage = diskStorage({
       destination: this.uploadDirectory,
       filename: (_req, file, callback) => {
-        const fileExtension = extension(file.mimetype); // Определяем расширение (.png, .jpg)
-        const filename = nanoid(); // Генерируем случайное имя
+        const fileExtension = extension(file.mimetype);
+        const filename = nanoid();
         callback(null, `${filename}.${fileExtension}`);
       }
     });

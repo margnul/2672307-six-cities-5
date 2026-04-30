@@ -1,5 +1,5 @@
 import { inject, injectable } from 'inversify';
-import { DocumentType, types } from '@typegoose/typegoose';
+import { DocumentType, mongoose, types } from '@typegoose/typegoose';
 import { OfferService } from './offer-service.interface.js';
 import { Component } from '../../types/component.enum.js';
 import { OfferEntity } from './offer.entity.js';
@@ -21,22 +21,46 @@ export default class DefaultOfferService implements OfferService {
     return this.offerModel.findById(offerId).populate(['userId']).exec();
   }
 
-  public async find(count?: number): Promise<DocumentType<OfferEntity>[]> {
+  public async find(userId?: string, count?: number): Promise<DocumentType<OfferEntity>[]> {
     const limit = count ?? 60;
     return this.offerModel
-      .find()
-      .sort({ createdAt: SortType.Down })
-      .limit(limit)
-      .populate(['userId'])
+      .aggregate([
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'userId',
+            foreignField: '_id',
+            as: 'user',
+          }
+        },
+        { $unwind: '$user' },
+        {
+          $addFields: {
+            id: { $toString: '$_id' },
+            isFavorite: {
+              $cond: [
+                {
+                  $and: [
+                    { $ne: [userId, undefined] },
+                    { $in: [new mongoose.Types.ObjectId(userId), '$user.favorites'] }
+                  ]
+                },
+                true,
+                false
+              ]
+            }
+          }
+        },
+        { $sort: { createdAt: -1 } },
+        { $limit: limit }
+      ])
       .exec();
   }
 
-  // Метод для удаления
   public async deleteById(offerId: string): Promise<DocumentType<OfferEntity> | null> {
     return this.offerModel.findByIdAndDelete(offerId).exec();
   }
 
-  // Метод для обновления (редактирования)
   public async updateById(offerId: string, dto: UpdateOfferDto): Promise<DocumentType<OfferEntity> | null> {
     return this.offerModel
       .findByIdAndUpdate(offerId, dto as any, { new: true })
@@ -44,7 +68,6 @@ export default class DefaultOfferService implements OfferService {
       .exec();
   }
 
-  // Сценарий 5.12: Премиальные предложения для города
   public async findPremium(city: string): Promise<DocumentType<OfferEntity>[]> {
     return this.offerModel
       .find({ city, isPremium: true })
@@ -54,7 +77,6 @@ export default class DefaultOfferService implements OfferService {
       .exec();
   }
 
-  // Сценарий 5.13: Избранные предложения
   public async findFavorites(): Promise<DocumentType<OfferEntity>[]> {
     return this.offerModel
       .find({ isFavorite: true })
@@ -63,7 +85,6 @@ export default class DefaultOfferService implements OfferService {
       .exec();
   }
 
-  // Тот самый метод для автоматического пересчета
   public async updateRatingAndCommentCount(offerId: string, newRating: number): Promise<void> {
     const offer = await this.offerModel.findById(offerId);
 

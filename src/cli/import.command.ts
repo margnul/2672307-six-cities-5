@@ -1,5 +1,5 @@
 import { Command } from './command.interface.js';
-import { createOffer } from '../shared/helpers/offer.js'; // Проверь пути
+import { createOffer } from '../shared/helpers/offer.js';
 import { TSVFileReader } from '../file-reader/tsv-file-reader.js';
 import { UserService } from '../shared/modules/user/user-service.interface.js';
 import { OfferService } from '../shared/modules/offer/offer-service.interface.js';
@@ -12,7 +12,7 @@ export class ImportCommand implements Command {
   constructor(
     private readonly userService: UserService,
     private readonly offerService: OfferService,
-    private readonly salt: string, // Соль для паролей из .env
+    private readonly salt: string,
   ) { }
 
   public getName(): string {
